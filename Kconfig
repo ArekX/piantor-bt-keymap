@@ -6,12 +6,18 @@ config PIANTOR_BT_INDICATOR
     bool "Bluetooth profile indicator on the BT_SEL keys"
     default y
     depends on DT_HAS_PIANTOR_BT_INDICATOR_STRIP_ENABLED
-    depends on ZMK_RGB_UNDERGLOW && ZMK_BLE
+    select LED_STRIP
+    select SPI
     help
       While the Keyboard layer is held, the LEDs under the five BT_SEL keys
       show each profile's state, with the active one brightest. Everything
       else is left to the normal underglow effect. Implemented as a strip
       shim, so it only runs when underglow is already pushing a frame.
+
+      Always built when the zmk,underglow chosen node is the shim, since
+      something must back that node. Without ZMK_BLE (settings_reset) or
+      ZMK_RGB_UNDERGLOW the parts that need them drop out and the shim is
+      a plain pass-through.
 
 if PIANTOR_BT_INDICATOR
 
@@ -36,6 +42,15 @@ config PIANTOR_BT_INDICATOR_OTHERS_PERCENT
     help
       100 leaves the underglow effect untouched around the indicator.
       Lower it if the indicator does not stand out enough against the effect.
+
+config PIANTOR_BATTERY_INDICATOR
+    bool "Also show both halves' battery level on the inner thumb keys"
+    default y
+    depends on ZMK_BATTERY_REPORTING && ZMK_BLE
+    help
+      Position 37 shows this half's battery, position 38 the right half's:
+      green >= 80%, turquoise >= 60%, yellow >= 40%, orange >= 20%, red below.
+      Dim white while the right half's level is not known yet.
 
 config PIANTOR_BT_INDICATOR_REFRESH_MS
     int "Refresh period while the layer is held and underglow is off, in ms"

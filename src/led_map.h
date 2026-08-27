@@ -41,3 +41,8 @@ static inline int piantor_left_led_for_pos(uint8_t pos) {
 #define PIANTOR_BT_SEL_LED_2 11
 #define PIANTOR_BT_SEL_LED_3 4
 #define PIANTOR_BT_SEL_LED_4 3
+
+// Battery gauges on the Keyboard layer: the two inner left thumbs.
+// Position 37 (chain 7) shows this half, position 38 (chain 0) the right half.
+#define PIANTOR_BAT_LEFT_LED 7
+#define PIANTOR_BAT_RIGHT_LED 0

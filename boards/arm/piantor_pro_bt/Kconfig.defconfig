@@ -9,6 +9,11 @@ config ZMK_KEYBOARD_NAME
 config ZMK_SPLIT_ROLE_CENTRAL
     default y
 
+# The Keyboard-layer indicator shows the right half's battery too, which the
+# central only knows if it fetches it over the split link.
+config ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING
+    default y
+
 endif # BOARD_PIANTOR_PRO_BT_LEFT
 
 if BOARD_PIANTOR_PRO_BT_LEFT || BOARD_PIANTOR_PRO_BT_RIGHT

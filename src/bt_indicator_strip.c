@@ -17,6 +17,11 @@
  * so "link up" is deliberately not shown for non-active profiles: it would
  * light every awake Mac in the room green.
  *
+ * The two inner left thumb keys show battery level, this half on 37 and the
+ * right half on 38 (the central fetches the peripheral's level over the split
+ * link): green >= 80%, turquoise >= 60%, yellow >= 40%, orange >= 20%, red
+ * below, dim white while the right half's level is unknown.
+ *
  * The other pixels keep whatever the underglow effect drew, so the glow
  * keeps running.
  *
@@ -27,6 +32,12 @@
  * rail, draws a black frame with just the indicator, and pushes it itself.
  * Releasing the layer blanks the strip and cuts the rail again. Outside the
  * layer, and whenever underglow is on, this file adds no timers or wakeups.
+ *
+ * This driver is always built when its node exists, because zmk,underglow
+ * points at it and a chosen node must resolve to a device. Builds without
+ * ZMK_BLE (the settings_reset shield) lose the profile colors, builds
+ * without ZMK_RGB_UNDERGLOW (the calibration chase) lose the self-driven
+ * path; what remains is a pass-through.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -41,12 +52,26 @@
 #include <zephyr/logging/log.h>
 
 #include <drivers/ext_power.h>
-#include <zmk/ble.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/layer_state_changed.h>
 #include <zmk/keymap.h>
-#include <zmk/rgb_underglow.h>
 #include <zmk/workqueue.h>
+
+#if IS_ENABLED(CONFIG_ZMK_BLE)
+#include <zmk/ble.h>
+#endif
+#if IS_ENABLED(CONFIG_PIANTOR_BATTERY_INDICATOR)
+#include <zmk/battery.h>
+#include <zmk/events/battery_state_changed.h>
+#include <zmk/events/split_peripheral_status_changed.h>
+#endif
+#if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
+#include <zmk/rgb_underglow.h>
+#endif
+
+// Underglow's own frames carry the overlay; the self-driven path only exists
+// to cover underglow being toggled off, so it needs underglow to be built.
+#define HAS_SELF_DRIVE IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
 
 #include "led_map.h"
 
@@ -57,16 +82,19 @@ struct bt_indicator_cfg {
     size_t length;
 };
 
+#if IS_ENABLED(CONFIG_ZMK_BLE)
 // Chain index of the LED under each &bt BT_SEL n key on the Keyboard layer.
 static const uint8_t bt_sel_leds[] = {
     PIANTOR_BT_SEL_LED_0, PIANTOR_BT_SEL_LED_1, PIANTOR_BT_SEL_LED_2,
     PIANTOR_BT_SEL_LED_3, PIANTOR_BT_SEL_LED_4,
 };
+#endif
 
 #define PCT(v, pct) ((uint8_t)(((uint32_t)(v) * (pct)) / 100))
 
 /* ---- Rendering ---------------------------------------------------------- */
 
+#if IS_ENABLED(CONFIG_ZMK_BLE)
 static struct led_rgb profile_color(uint8_t index, bool active) {
     bool bonded = !zmk_ble_profile_is_open(index);
 
@@ -86,6 +114,54 @@ static struct led_rgb profile_color(uint8_t index, bool active) {
     return (struct led_rgb){.r = brt, .g = PCT(brt, 45), .b = 0};
 }
 
+static void overlay_profiles(struct led_rgb *pixels, size_t num_pixels) {
+    int active = zmk_ble_active_profile_index();
+
+    for (uint8_t i = 0; i < ARRAY_SIZE(bt_sel_leds) && i < ZMK_BLE_PROFILE_COUNT; i++) {
+        uint8_t led = bt_sel_leds[i];
+        if (led < num_pixels) {
+            pixels[led] = profile_color(i, i == active);
+        }
+    }
+}
+#endif /* CONFIG_ZMK_BLE */
+
+#if IS_ENABLED(CONFIG_PIANTOR_BATTERY_INDICATOR)
+// Last level reported by the right half, or -1 while unknown / disconnected.
+static int right_soc = -1;
+
+static struct led_rgb battery_color(int soc) {
+    uint8_t brt = PCT(255, CONFIG_PIANTOR_BT_INDICATOR_BRT_ACTIVE);
+
+    if (soc < 0) {
+        uint8_t dim = PCT(255, CONFIG_PIANTOR_BT_INDICATOR_BRT_INACTIVE);
+        return (struct led_rgb){.r = dim, .g = dim, .b = dim};
+    }
+    if (soc >= 80) {
+        return (struct led_rgb){.r = 0, .g = brt, .b = 0};
+    }
+    if (soc >= 60) {
+        return (struct led_rgb){.r = 0, .g = brt, .b = PCT(brt, 80)};
+    }
+    if (soc >= 40) {
+        return (struct led_rgb){.r = brt, .g = PCT(brt, 70), .b = 0};
+    }
+    if (soc >= 20) {
+        return (struct led_rgb){.r = brt, .g = PCT(brt, 30), .b = 0};
+    }
+    return (struct led_rgb){.r = brt, .g = 0, .b = 0};
+}
+
+static void overlay_battery(struct led_rgb *pixels, size_t num_pixels) {
+    if (PIANTOR_BAT_LEFT_LED < num_pixels) {
+        pixels[PIANTOR_BAT_LEFT_LED] = battery_color(zmk_battery_state_of_charge());
+    }
+    if (PIANTOR_BAT_RIGHT_LED < num_pixels) {
+        pixels[PIANTOR_BAT_RIGHT_LED] = battery_color(right_soc);
+    }
+}
+#endif
+
 static void overlay_indicator(struct led_rgb *pixels, size_t num_pixels) {
 #if CONFIG_PIANTOR_BT_INDICATOR_OTHERS_PERCENT < 100
     for (size_t i = 0; i < num_pixels; i++) {
@@ -95,14 +171,12 @@ static void overlay_indicator(struct led_rgb *pixels, size_t num_pixels) {
     }
 #endif
 
-    int active = zmk_ble_active_profile_index();
-
-    for (uint8_t i = 0; i < ARRAY_SIZE(bt_sel_leds) && i < ZMK_BLE_PROFILE_COUNT; i++) {
-        uint8_t led = bt_sel_leds[i];
-        if (led < num_pixels) {
-            pixels[led] = profile_color(i, i == active);
-        }
-    }
+#if IS_ENABLED(CONFIG_ZMK_BLE)
+    overlay_profiles(pixels, num_pixels);
+#endif
+#if IS_ENABLED(CONFIG_PIANTOR_BATTERY_INDICATOR)
+    overlay_battery(pixels, num_pixels);
+#endif
 }
 
 static inline bool indicator_layer_active(void) {
@@ -130,8 +204,10 @@ static int bt_indicator_update_channels(const struct device *dev, uint8_t *chann
 
 /* ---- Self-driven frames (underglow off) --------------------------------- */
 
-// Single instance; the layer listener has no device handle to work from.
+// Single instance; the listeners have no device handle to work from.
 static const struct device *self;
+
+#if HAS_SELF_DRIVE
 
 #if DT_HAS_COMPAT_STATUS_OKAY(zmk_ext_power_generic)
 static const struct device *const ext_power = DEVICE_DT_GET(DT_INST(0, zmk_ext_power_generic));
@@ -224,25 +300,57 @@ static void own_timer_handler(struct k_timer *timer) {
 }
 
 K_TIMER_DEFINE(own_timer, own_timer_handler, NULL);
+#endif /* HAS_SELF_DRIVE */
 
-static int bt_indicator_layer_listener(const zmk_event_t *eh) {
-    const struct zmk_layer_state_changed *ev = as_zmk_layer_state_changed(eh);
-    if (ev == NULL || ev->layer != CONFIG_PIANTOR_BT_INDICATOR_LAYER) {
+/* ---- Events ------------------------------------------------------------- */
+
+static int bt_indicator_event_listener(const zmk_event_t *eh) {
+#if HAS_SELF_DRIVE
+    const struct zmk_layer_state_changed *layer_ev = as_zmk_layer_state_changed(eh);
+    if (layer_ev != NULL) {
+        if (layer_ev->layer != CONFIG_PIANTOR_BT_INDICATOR_LAYER) {
+            return ZMK_EV_EVENT_BUBBLE;
+        }
+        if (layer_ev->state) {
+            k_timer_start(&own_timer, K_NO_WAIT, K_MSEC(CONFIG_PIANTOR_BT_INDICATOR_REFRESH_MS));
+        } else {
+            k_timer_stop(&own_timer);
+            k_work_submit_to_queue(zmk_workqueue_lowprio_work_q(), &layer_exit);
+        }
+        return ZMK_EV_EVENT_BUBBLE;
+    }
+#endif
+
+#if IS_ENABLED(CONFIG_PIANTOR_BATTERY_INDICATOR) &&                                              \
+    IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING)
+    const struct zmk_peripheral_battery_state_changed *bat_ev =
+        as_zmk_peripheral_battery_state_changed(eh);
+    if (bat_ev != NULL) {
+        right_soc = bat_ev->state_of_charge;
         return ZMK_EV_EVENT_BUBBLE;
     }
 
-    if (ev->state) {
-        k_timer_start(&own_timer, K_NO_WAIT, K_MSEC(CONFIG_PIANTOR_BT_INDICATOR_REFRESH_MS));
-    } else {
-        k_timer_stop(&own_timer);
-        k_work_submit_to_queue(zmk_workqueue_lowprio_work_q(), &layer_exit);
+    const struct zmk_split_peripheral_status_changed *status_ev =
+        as_zmk_split_peripheral_status_changed(eh);
+    if (status_ev != NULL && !status_ev->connected) {
+        // Stale once the link drops; the central re-reads it on reconnect.
+        right_soc = -1;
+        return ZMK_EV_EVENT_BUBBLE;
     }
+#endif
 
     return ZMK_EV_EVENT_BUBBLE;
 }
 
-ZMK_LISTENER(bt_indicator, bt_indicator_layer_listener);
+ZMK_LISTENER(bt_indicator, bt_indicator_event_listener);
+#if HAS_SELF_DRIVE
 ZMK_SUBSCRIPTION(bt_indicator, zmk_layer_state_changed);
+#endif
+#if IS_ENABLED(CONFIG_PIANTOR_BATTERY_INDICATOR) &&                                              \
+    IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING)
+ZMK_SUBSCRIPTION(bt_indicator, zmk_peripheral_battery_state_changed);
+ZMK_SUBSCRIPTION(bt_indicator, zmk_split_peripheral_status_changed);
+#endif
 
 /* ---- Device ------------------------------------------------------------- */
 
