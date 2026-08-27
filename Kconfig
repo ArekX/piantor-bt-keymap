@@ -1,0 +1,83 @@
+# SPDX-License-Identifier: MIT
+
+menu "Piantor Pro BT"
+
+config PIANTOR_BT_INDICATOR
+    bool "Bluetooth profile indicator on the BT_SEL keys"
+    default y
+    depends on DT_HAS_PIANTOR_BT_INDICATOR_STRIP_ENABLED
+    depends on ZMK_RGB_UNDERGLOW && ZMK_BLE
+    help
+      While the Keyboard layer is held, the LEDs under the five BT_SEL keys
+      show each profile's state, with the active one brightest. Everything
+      else is left to the normal underglow effect. Implemented as a strip
+      shim, so it only runs when underglow is already pushing a frame.
+
+if PIANTOR_BT_INDICATOR
+
+config PIANTOR_BT_INDICATOR_LAYER
+    int "Layer that shows the indicator"
+    default 3
+
+config PIANTOR_BT_INDICATOR_BRT_ACTIVE
+    int "Brightness of the active profile's LED in percent"
+    range 1 100
+    default 60
+
+config PIANTOR_BT_INDICATOR_BRT_INACTIVE
+    int "Brightness of the other profiles' LEDs in percent"
+    range 1 100
+    default 25
+
+config PIANTOR_BT_INDICATOR_OTHERS_PERCENT
+    int "Brightness kept on the non-BT LEDs while the indicator shows, in percent"
+    range 0 100
+    default 100
+    help
+      100 leaves the underglow effect untouched around the indicator.
+      Lower it if the indicator does not stand out enough against the effect.
+
+config PIANTOR_BT_INDICATOR_REFRESH_MS
+    int "Refresh period while the layer is held and underglow is off, in ms"
+    range 50 1000
+    default 100
+    help
+      With underglow on, its own 50 ms frames carry the indicator and this
+      timer is idle. With underglow off, the indicator draws itself at this
+      rate so profile changes show up while the layer is held.
+
+config PIANTOR_BT_INDICATOR_INIT_PRIORITY
+    int "Init priority (must be after the wrapped LED strip)"
+    default 91
+
+endif # PIANTOR_BT_INDICATOR
+
+config PIANTOR_LED_CALIBRATION
+    bool "LED chain calibration chase"
+    select LED_STRIP
+    select SPI
+    select ZMK_LOW_PRIORITY_WORK_QUEUE
+    help
+      Lights one LED of the zmk,underglow strip at a time, walking the chain
+      from index 0 upward and wrapping, so the physical key under each chain
+      index can be recorded. The keymap is untouched. Build with
+      CONFIG_ZMK_RGB_UNDERGLOW=n so the two never drive the strip at once.
+
+if PIANTOR_LED_CALIBRATION
+
+config PIANTOR_LED_CALIBRATION_STEP_MS
+    int "Milliseconds each LED stays lit"
+    range 250 10000
+    default 2000
+
+config PIANTOR_LED_CALIBRATION_BRIGHTNESS
+    int "Per-channel brightness of the lit LED (0-255)"
+    range 1 64
+    default 24
+    help
+      Kept low on purpose: this writes raw pixel values and bypasses the
+      underglow brightness cap. One LED at 24/255 white is a few mA.
+
+endif # PIANTOR_LED_CALIBRATION
+
+endmenu

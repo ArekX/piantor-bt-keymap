@@ -11,6 +11,7 @@
 #   ./build.sh                 # left + right, nice_view (default)
 #   ./build.sh --reset         # settings_reset for both halves
 #   ./build.sh --all           # everything in build.yaml
+#   ./build.sh --calib         # left half only: LED chain calibration chase (src/led_calibration.c)
 #   ./build.sh --pristine      # force a clean rebuild
 #   ./build.sh --update        # re-run `west update` (after changing west.yml)
 #   ./build.sh --shell         # drop into the container instead of building
@@ -35,10 +36,11 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --reset)          SET="reset" ;;
         --all)            SET="all" ;;
+        --calib)          SET="calib" ;;
         -p|--pristine)    PRISTINE=1 ;;
         -u|--update)      DO_UPDATE=1 ;;
         --shell)          SHELL_ONLY=1 ;;
-        -h|--help)        sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help)        sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *)                echo "unknown option: $1" >&2; exit 2 ;;
     esac
     shift
@@ -50,10 +52,14 @@ TARGETS_DEFAULT="piantor_pro_bt_left;nice_view;studio-rpc-usb-uart;-DCONFIG_ZMK_
 piantor_pro_bt_right;nice_view;studio-rpc-usb-uart;;piantor_pro_bt_right"
 TARGETS_RESET="piantor_pro_bt_left;settings_reset;;;piantor_pro_bt_left-settings_reset
 piantor_pro_bt_right;settings_reset;;;piantor_pro_bt_right-settings_reset"
+# Local-only dev target, deliberately not in build.yaml. Same as the default
+# left build but with underglow compiled out and the calibration chase in.
+TARGETS_CALIB="piantor_pro_bt_left;nice_view;studio-rpc-usb-uart;-DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_RGB_UNDERGLOW=n -DCONFIG_PIANTOR_LED_CALIBRATION=y;piantor_pro_bt_left-led_calib"
 
 case "$SET" in
     default) TARGETS="$TARGETS_DEFAULT" ;;
     reset)   TARGETS="$TARGETS_RESET" ;;
+    calib)   TARGETS="$TARGETS_CALIB" ;;
     all)     TARGETS="$TARGETS_DEFAULT
 $TARGETS_RESET" ;;
 esac

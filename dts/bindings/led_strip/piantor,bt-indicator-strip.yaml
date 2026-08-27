@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+
+description: |
+  LED strip shim that sits between ZMK's RGB underglow and the real strip.
+  Frames pass through untouched, except while the configured layer is
+  active, when the pixels under the BT_SEL keys are overwritten with the
+  Bluetooth profile indicator. Point zmk,underglow at this node.
+
+compatible: "piantor,bt-indicator-strip"
+
+include: base.yaml
+
+properties:
+  led-strip:
+    type: phandle
+    required: true
+    description: The physical LED strip to forward frames to.
+
+  chain-length:
+    type: int
+    required: true
+    description: Number of LEDs. Must match the wrapped strip; ZMK reads it from here.

@@ -12,7 +12,16 @@
     compatible = "piantor_pro_bt_left";
 
     chosen {
-        zmk,underglow = &led_strip;
+        zmk,underglow = &bt_indicator;
+    };
+
+    // Shim in front of the real strip: forwards underglow frames, and
+    // overlays the Bluetooth profile indicator while the Keyboard layer is
+    // held. See src/bt_indicator_strip.c.
+    bt_indicator: bt_indicator {
+        compatible = "piantor,bt-indicator-strip";
+        led-strip = <&led_strip>;
+        chain-length = <21>;
     };
 
     kscan0: kscan {
