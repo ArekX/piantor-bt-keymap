@@ -81,21 +81,21 @@
             //                    | GUI | LWR | SPC | ENT | RSE  | ALT |
 
             bindings = <
-&kp TAB  &kp Q  &kp W  &kp E  &kp R  &kp T  &kp Y  &kp U  &kp I  &kp O  &kp P  &kp BACKSLASH  &kp ESCAPE  &hml LEFT_GUI A  &hml LEFT_ALT S  &hml LCTRL D  &hml LEFT_SHIFT F  &kp G  &kp H  &hmr RSHIFT J  &hmr RCTRL K  &hmr RIGHT_ALT L  &hmr RGUI SEMI  &kp SQT  &kp GRAVE  &kp Z  &kp X  &kp C  &kp V  &kp B  &kp N  &kp M  &kp COMMA  &kp DOT  &kp FSLH  &mo 3  &mo 5  &kp BACKSPACE  &lt 1 DELETE  &lt 1 ENTER  &lt 2 SPACE  &mo 4
+&kp TAB  &kp Q  &kp W  &kp E  &kp R  &kp T  &kp Y  &kp U  &kp I  &kp O  &kp P  &kp BACKSLASH  &lt 1 ESC  &hml LEFT_GUI A  &hml LEFT_ALT S  &hml LCTRL D  &hml LEFT_SHIFT F  &kp G  &kp H  &hmr RSHIFT J  &hmr RCTRL K  &hmr RIGHT_ALT L  &hmr RGUI SEMI  &lt 1 SQT  &lt 6 GRAVE  &kp Z  &kp X  &kp C  &kp V  &kp B  &kp N  &kp M  &kp COMMA  &kp DOT  &kp FSLH  &mo 7  &mo 5  &kp BACKSPACE  &lt 4 DELETE  &lt 2 ENTER  &kp SPACE  &mo 3
             >;
         };
 
         numeric {
             display-name = "Numbers";
             bindings = <
-&kp EQUAL  &kp N1  &kp N2  &kp N3  &kp N4  &kp N5  &kp N6  &kp N7  &kp N8  &kp N9  &kp N0  &kp MINUS  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &kp LBKT  &kp RBKT  &trans  &trans  &trans  &trans  &trans  &trans
+&kp EQUAL  &kp N1  &kp N2  &kp N3  &kp N4  &kp N5  &kp N6  &kp N7  &kp N8  &kp N9  &kp N0  &kp MINUS  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &kp GRAVE  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &kp LBKT  &kp RBKT  &trans  &trans  &trans  &trans  &trans  &trans
             >;
         };
 
         control {
             display-name = "Control Layer";
             bindings = <
-&kp ESC  &kp F1  &kp F2  &kp F3  &kp F4  &kp F5  &kp F6  &kp F7  &kp F8  &kp F9  &kp F10  &kp F11  &kp C_VOL_UP  &trans  &trans  &trans  &trans  &kp LA(SLASH)  &kp PAGE_UP  &kp HOME  &kp UP  &kp END  &kp PRINTSCREEN  &kp F12  &kp C_VOLUME_DOWN  &kp C_MUTE  &kp C_PREVIOUS  &kp C_NEXT  &kp C_PLAY_PAUSE  &kp LC(P)  &kp PAGE_DOWN  &kp LEFT  &kp DOWN  &kp RIGHT  &kp INSERT  &trans  &trans  &trans  &trans  &trans  &trans  &trans
+&kp ESC  &kp F1  &kp F2  &kp F3  &kp F4  &kp F5  &kp F6  &kp F7  &kp F8  &kp F9  &kp F10  &kp F11  &kp C_VOL_UP  &trans  &trans  &trans  &trans  &kp LA(SLASH)  &kp PAGE_UP  &kp HOME  &kp UP  &kp END  &kp PRINTSCREEN  &kp F12  &kp C_VOLUME_DOWN  &kp C_MUTE  &kp C_PREVIOUS  &kp C_NEXT  &kp C_PLAY_PAUSE  &kp LC(P)  &kp PAGE_DOWN  &kp LEFT  &kp DOWN  &kp RIGHT  &kp INSERT  &none  &trans  &trans  &trans  &trans  &trans  &trans
             >;
         };
 
@@ -109,7 +109,7 @@
             //                    | GUI |     | SPC   | ENT |     | ALT |
 
             bindings = <
-&trans  &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4  &rgb_ug RGB_TOG  &rgb_ug RGB_HUI  &rgb_ug RGB_HUD  &rgb_ug RGB_SAI  &rgb_ug RGB_SAD  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &bt BT_CLR  &trans  &trans  &sys_reset  &bootloader  &studio_unlock  &rgb_ug RGB_BRI  &rgb_ug RGB_BRD  &rgb_ug RGB_EFR  &rgb_ug RGB_EFF  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans
+&trans  &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4  &rgb_ug RGB_TOG  &rgb_ug RGB_HUI  &rgb_ug RGB_HUD  &rgb_ug RGB_SAI  &rgb_ug RGB_SAD  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &bt BT_CLR  &trans  &trans  &sys_reset  &bootloader  &studio_unlock  &rgb_ug RGB_BRI  &rgb_ug RGB_BRD  &rgb_ug RGB_EFR  &rgb_ug RGB_EFF  &trans  &none  &trans  &trans  &trans  &trans  &trans  &trans
             >;
         };
 
@@ -123,21 +123,21 @@
         Numpad {
             display-name = "Numpad";
             bindings = <
-&trans  &trans  &trans  &trans  &trans  &trans  &kp N7  &kp N8  &kp N9  &kp LS(PLUS)  &kp EQUAL  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &kp N4  &kp N5  &kp N6  &kp MINUS  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &kp N1  &kp N2  &kp N3  &kp N0  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans
+&trans  &trans  &trans  &trans  &trans  &trans  &kp N7  &kp N8  &kp N9  &kp LS(PLUS)  &kp EQUAL  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &kp N4  &kp N5  &kp N6  &kp MINUS  &trans  &trans  &none  &trans  &trans  &trans  &trans  &trans  &kp N1  &kp N2  &kp N3  &kp N0  &trans  &none  &trans  &trans  &trans  &trans  &trans  &trans
             >;
         };
 
-        extra_layer_5 {
+        SymbolsLeft {
             display-name = "EXTRA 5";
             bindings = <
-&trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans
+&kp TILDE  &kp EXCL  &kp AT_SIGN  &kp POUND  &kp DOLLAR  &kp PERCENT  &kp CARET  &kp AMPERSAND  &kp ASTERISK  &kp LEFT_PARENTHESIS  &kp RIGHT_PARENTHESIS  &kp UNDERSCORE  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &kp LEFT_BRACE  &kp RIGHT_BRACE  &trans  &trans  &trans  &trans  &trans  &trans
             >;
         };
 
-        extra_layer_6 {
-            display-name = "EXTRA 6";
+        SymbolsRight {
+            display-name = "EXTRA 5";
             bindings = <
-&trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans
+&kp TILDE  &kp EXCL  &kp AT_SIGN  &kp POUND  &kp DOLLAR  &kp PERCENT  &kp CARET  &kp AMPERSAND  &kp ASTERISK  &kp LEFT_PARENTHESIS  &kp RIGHT_PARENTHESIS  &kp UNDERSCORE  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &kp GRAVE  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans
             >;
         };
     };
