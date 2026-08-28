@@ -81,7 +81,7 @@
             //                    | GUI | LWR | SPC | ENT | RSE  | ALT |
 
             bindings = <
-&kp TAB  &kp Q  &kp W  &kp E  &kp R  &kp T  &kp Y  &kp U  &kp I  &kp O  &kp P  &kp BACKSLASH  &lt 1 ESC  &hml LEFT_GUI A  &hml LEFT_ALT S  &hml LCTRL D  &hml LEFT_SHIFT F  &kp G  &kp H  &hmr RSHIFT J  &hmr RCTRL K  &hmr RIGHT_ALT L  &hmr RGUI SEMI  &lt 1 SQT  &lt 6 GRAVE  &kp Z  &kp X  &kp C  &kp V  &kp B  &kp N  &kp M  &kp COMMA  &kp DOT  &kp FSLH  &mo 7  &mo 5  &kp BACKSPACE  &lt 4 DELETE  &lt 2 ENTER  &kp SPACE  &mo 3
+&kp TAB  &kp Q  &kp W  &kp E  &kp R  &kp T  &kp Y  &kp U  &kp I  &kp O  &kp P  &kp BACKSLASH  &lt 1 ESC  &hml LEFT_GUI A  &hml LEFT_ALT S  &hml LCTRL D  &hml LEFT_SHIFT F  &kp G  &kp H  &hmr RSHIFT J  &hmr RCTRL K  &hmr RIGHT_ALT L  &hmr RGUI SEMI  &lt 1 SQT  &lt 6 GRAVE  &kp Z  &kp X  &kp C  &kp V  &kp B  &kp N  &kp M  &kp COMMA  &kp DOT  &kp FSLH  &mo 7  &mo 5  &kp BACKSPACE  &kp DELETE  &lt 2 ENTER  &lt 4 SPACE  &mo 3
             >;
         };
 
@@ -123,7 +123,7 @@
         Numpad {
             display-name = "Numpad";
             bindings = <
-&trans  &trans  &trans  &trans  &trans  &trans  &kp N7  &kp N8  &kp N9  &kp LS(PLUS)  &kp EQUAL  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &kp N4  &kp N5  &kp N6  &kp MINUS  &trans  &trans  &none  &trans  &trans  &trans  &trans  &trans  &kp N1  &kp N2  &kp N3  &kp N0  &trans  &none  &trans  &trans  &trans  &trans  &trans  &trans
+&trans  &trans  &trans  &trans  &trans  &trans  &kp N7  &kp N8  &kp N9  &kp LS(PLUS)  &kp ASTERISK  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &kp N4  &kp N5  &kp N6  &kp MINUS  &kp SLASH  &trans  &none  &trans  &trans  &trans  &trans  &trans  &kp N1  &kp N2  &kp N3  &kp DOT  &trans  &none  &trans  &trans  &trans  &trans  &kp N0  &kp EQUAL
             >;
         };
 
