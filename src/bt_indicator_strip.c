@@ -22,6 +22,16 @@
  * link): green >= 80%, turquoise >= 60%, yellow >= 40%, orange >= 20%, red
  * below, dim white while the right half's level is unknown.
  *
+ * The right half's level arrives as zmk_peripheral_battery_state_changed.
+ * Two quirks of ZMK's split central (v0.3) shape how it is consumed:
+ *  - Its BLE disconnect callback runs for every link, host links included,
+ *    and pushes a level-0 event with an out-of-range source for those. So a
+ *    profile switch, which drops the host link, would otherwise paint the
+ *    right half red until its real level next changes.
+ *  - Level 0 is also what it sends when the right half itself disconnects,
+ *    and the peripheral-status event only exists on the peripheral side, so
+ *    0 is treated as "unknown" here rather than as an empty battery.
+ *
  * The other pixels keep whatever the underglow effect drew, so the glow
  * keeps running.
  *
@@ -63,7 +73,7 @@
 #if IS_ENABLED(CONFIG_PIANTOR_BATTERY_INDICATOR)
 #include <zmk/battery.h>
 #include <zmk/events/battery_state_changed.h>
-#include <zmk/events/split_peripheral_status_changed.h>
+#include <zmk/split/central.h>
 #endif
 #if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
 #include <zmk/rgb_underglow.h>
@@ -326,15 +336,15 @@ static int bt_indicator_event_listener(const zmk_event_t *eh) {
     const struct zmk_peripheral_battery_state_changed *bat_ev =
         as_zmk_peripheral_battery_state_changed(eh);
     if (bat_ev != NULL) {
-        right_soc = bat_ev->state_of_charge;
-        return ZMK_EV_EVENT_BUBBLE;
-    }
-
-    const struct zmk_split_peripheral_status_changed *status_ev =
-        as_zmk_split_peripheral_status_changed(eh);
-    if (status_ev != NULL && !status_ev->connected) {
-        // Stale once the link drops; the central re-reads it on reconnect.
-        right_soc = -1;
+        if (bat_ev->source >= ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT) {
+            // Raised from the central's disconnect callback for a host link
+            // (source is a negated errno squeezed into a uint8_t). Not ours.
+            return ZMK_EV_EVENT_BUBBLE;
+        }
+        // 0 is the central's "peripheral went away" sentinel; the level is
+        // re-read on reconnect. A genuinely empty cell reads 0 too, but by
+        // then the right half is not talking to us anyway.
+        right_soc = bat_ev->state_of_charge == 0 ? -1 : bat_ev->state_of_charge;
         return ZMK_EV_EVENT_BUBBLE;
     }
 #endif
@@ -349,7 +359,6 @@ ZMK_SUBSCRIPTION(bt_indicator, zmk_layer_state_changed);
 #if IS_ENABLED(CONFIG_PIANTOR_BATTERY_INDICATOR) &&                                              \
     IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING)
 ZMK_SUBSCRIPTION(bt_indicator, zmk_peripheral_battery_state_changed);
-ZMK_SUBSCRIPTION(bt_indicator, zmk_split_peripheral_status_changed);
 #endif
 
 /* ---- Device ------------------------------------------------------------- */
