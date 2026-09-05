@@ -22,6 +22,14 @@
  * link): green >= 80%, turquoise >= 60%, yellow >= 40%, orange >= 20%, red
  * below, dim white while the right half's level is unknown.
  *
+ * While a half sees USB power its LED shows the charge state instead of the
+ * level: pulsing orange while charging, steady bright white once the level
+ * has reached CONFIG_PIANTOR_BATTERY_FULL_PERCENT. This half decides from
+ * its own VBUS line (vbus.h) and gauge; the right half decides for itself
+ * and sends the result over the split link through the custom
+ * characteristic in split_power.h. Until it has answered, its LED shows the
+ * level.
+ *
  * The right half's level arrives as zmk_peripheral_battery_state_changed.
  * Two quirks of ZMK's split central (v0.3) shape how it is consumed:
  *  - Its BLE disconnect callback runs for every link, host links included,
@@ -74,6 +82,13 @@
 #include <zmk/battery.h>
 #include <zmk/events/battery_state_changed.h>
 #include <zmk/split/central.h>
+#include "power_state.h"
+#endif
+#if IS_ENABLED(CONFIG_PIANTOR_BATTERY_CHARGE_INDICATOR)
+#include "vbus.h"
+#endif
+#if IS_ENABLED(CONFIG_PIANTOR_SPLIT_POWER)
+#include "split_power.h"
 #endif
 #if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
 #include <zmk/rgb_underglow.h>
@@ -140,13 +155,47 @@ static void overlay_profiles(struct led_rgb *pixels, size_t num_pixels) {
 // Last level reported by the right half, or -1 while unknown / disconnected.
 static int right_soc = -1;
 
-static struct led_rgb battery_color(int soc) {
+#if IS_ENABLED(CONFIG_PIANTOR_BATTERY_CHARGE_INDICATOR)
+// Brightness of the charging pulse right now, in percent: a triangle wave
+// over CONFIG_PIANTOR_BATTERY_CHARGING_PULSE_MS between the configured floor
+// and 100. Driven off uptime, so every frame that samples it agrees.
+static uint8_t charging_pulse_pct(void) {
+#if CONFIG_PIANTOR_BATTERY_CHARGING_PULSE_MS == 0
+    return 100;
+#else
+    const uint32_t period = CONFIG_PIANTOR_BATTERY_CHARGING_PULSE_MS;
+    uint32_t phase = (uint32_t)(k_uptime_get() % period);
+    // 0..200 across the period, folded to 0..100 and back.
+    uint32_t tri = (phase * 200) / period;
+    if (tri > 100) {
+        tri = 200 - tri;
+    }
+    const uint32_t floor = CONFIG_PIANTOR_BATTERY_CHARGING_PULSE_MIN_PERCENT;
+    return (uint8_t)(floor + ((100 - floor) * tri) / 100);
+#endif
+}
+#endif
+
+// soc: level in percent, or -1 while unknown. power: that half's charge
+// state, UNKNOWN when it has not told us (right half only).
+static struct led_rgb battery_color(int soc, enum piantor_power_state power) {
     uint8_t brt = PCT(255, CONFIG_PIANTOR_BT_INDICATOR_BRT_ACTIVE);
 
     if (soc < 0) {
         uint8_t dim = PCT(255, CONFIG_PIANTOR_BT_INDICATOR_BRT_INACTIVE);
         return (struct led_rgb){.r = dim, .g = dim, .b = dim};
     }
+#if IS_ENABLED(CONFIG_PIANTOR_BATTERY_CHARGE_INDICATOR)
+    if (power == PIANTOR_POWER_FULL) {
+        return (struct led_rgb){.r = brt, .g = brt, .b = brt};
+    }
+    if (power == PIANTOR_POWER_CHARGING) {
+        uint8_t lvl = PCT(brt, charging_pulse_pct());
+        return (struct led_rgb){.r = lvl, .g = PCT(lvl, 35), .b = 0};
+    }
+#else
+    ARG_UNUSED(power);
+#endif
     if (soc >= 80) {
         return (struct led_rgb){.r = 0, .g = brt, .b = 0};
     }
@@ -163,11 +212,21 @@ static struct led_rgb battery_color(int soc) {
 }
 
 static void overlay_battery(struct led_rgb *pixels, size_t num_pixels) {
+    int left_soc = zmk_battery_state_of_charge();
+    enum piantor_power_state left_power = PIANTOR_POWER_UNKNOWN;
+    enum piantor_power_state right_power = PIANTOR_POWER_UNKNOWN;
+#if IS_ENABLED(CONFIG_PIANTOR_BATTERY_CHARGE_INDICATOR)
+    left_power = piantor_power_state_from(piantor_vbus_present(), left_soc);
+#endif
+#if IS_ENABLED(CONFIG_PIANTOR_SPLIT_POWER)
+    right_power = piantor_peripheral_power_state();
+#endif
+
     if (PIANTOR_BAT_LEFT_LED < num_pixels) {
-        pixels[PIANTOR_BAT_LEFT_LED] = battery_color(zmk_battery_state_of_charge());
+        pixels[PIANTOR_BAT_LEFT_LED] = battery_color(left_soc, left_power);
     }
     if (PIANTOR_BAT_RIGHT_LED < num_pixels) {
-        pixels[PIANTOR_BAT_RIGHT_LED] = battery_color(right_soc);
+        pixels[PIANTOR_BAT_RIGHT_LED] = battery_color(right_soc, right_power);
     }
 }
 #endif

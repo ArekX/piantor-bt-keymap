@@ -52,6 +52,33 @@ config PIANTOR_BATTERY_INDICATOR
       green >= 80%, turquoise >= 60%, yellow >= 40%, orange >= 20%, red below.
       Dim white while the right half's level is not known yet.
 
+config PIANTOR_BATTERY_CHARGE_INDICATOR
+    bool "Show charging state on the battery LEDs while USB powered"
+    default y
+    depends on PIANTOR_BATTERY_INDICATOR && SOC_NRF52840
+    help
+      While a half is plugged into USB its battery LED pulses orange until
+      the level reaches PIANTOR_BATTERY_FULL_PERCENT, then turns steady
+      bright white. This half reads its own VBUS line and gauge. The right
+      half's state arrives over the split link when PIANTOR_SPLIT_POWER is
+      enabled (it is by default, but both halves must run firmware that has
+      it); until then, or with it disabled, the right LED keeps showing the
+      level.
+
+if PIANTOR_BATTERY_CHARGE_INDICATOR
+
+config PIANTOR_BATTERY_CHARGING_PULSE_MS
+    int "Period of the charging pulse in ms (0 for steady orange)"
+    range 0 10000
+    default 2000
+
+config PIANTOR_BATTERY_CHARGING_PULSE_MIN_PERCENT
+    int "Dimmest point of the charging pulse, in percent of the active brightness"
+    range 0 100
+    default 20
+
+endif # PIANTOR_BATTERY_CHARGE_INDICATOR
+
 config PIANTOR_BT_INDICATOR_REFRESH_MS
     int "Refresh period while the layer is held and underglow is off, in ms"
     range 50 1000
@@ -66,6 +93,40 @@ config PIANTOR_BT_INDICATOR_INIT_PRIORITY
     default 91
 
 endif # PIANTOR_BT_INDICATOR
+
+config PIANTOR_BATTERY_FULL_PERCENT
+    int "Level at which a USB powered half counts as fully charged"
+    range 1 100
+    default 100
+    depends on ZMK_BATTERY_REPORTING && SOC_NRF52840
+    help
+      Used by both halves, each against its own gauge reading. The MAX17048
+      estimates the level from cell voltage and normally reaches 100 around
+      the time the charger tops off; its raw reading can even go a little
+      above 100 on a full cell, which still counts. Lower this if a half
+      sits at 99 while plugged in and never turns white.
+
+config PIANTOR_SPLIT_POWER
+    bool "Share the right half's charge state over the split link"
+    default y
+    depends on ZMK_SPLIT_BLE && ZMK_BATTERY_REPORTING && SOC_NRF52840
+    help
+      Built on both halves. The right half (peripheral) adds a GATT
+      characteristic holding its charge state (on battery / charging /
+      full, decided from its own VBUS line and gauge) and notifies on every
+      change; the left half (central) subscribes to it, so the charging
+      indicator can show the right half too. Nothing else depends on it.
+
+if PIANTOR_SPLIT_POWER
+
+config PIANTOR_SPLIT_POWER_POLL_MS
+    int "How often the peripheral re-evaluates its charge state, in ms"
+    range 100 10000
+    default 1000
+    help
+      One register read per period; the value is only sent when it changes.
+
+endif # PIANTOR_SPLIT_POWER
 
 config PIANTOR_LED_CALIBRATION
     bool "LED chain calibration chase"
