@@ -27,7 +27,7 @@
 
             #binding-cells = <2>;
             flavor = "balanced";
-            tapping-term-ms = <280>;
+            tapping-term-ms = <180>;
 
             // No quick-tap: it would force a tap when the same key was
             // tapped moments ago, leaking an "f" in sequences like "if I".
@@ -46,7 +46,7 @@
 
             #binding-cells = <2>;
             flavor = "balanced";
-            tapping-term-ms = <280>;
+            tapping-term-ms = <180>;
 
             // No quick-tap: it would force a tap when the same key was
             // tapped moments ago, leaking an "f" in sequences like "if I".
