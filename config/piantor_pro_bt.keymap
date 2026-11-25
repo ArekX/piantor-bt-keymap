@@ -58,13 +58,20 @@
             quick-tap-ms = <175>;
         };
 
-        // Shift on F/J: same as above but with a shorter tapping term, so a
-        // brief hold resolves to Shift even when F is released before the
-        // shifted key (the "fi" instead of "I" misfire). retro-tap keeps a
-        // slow lone press of F/J typing the letter instead of a bare Shift.
-        // Pinky layer-taps (Esc, '): same timing as the Shift keys so the
-        // layer comes on without waiting out the full tapping term. No
-        // positional filter, since same-hand keys (Esc + 2/3/4) are used.
+        // Pinky layer-taps (Esc, ', `, [). hold-preferred on purpose: these
+        // are chorded, so the layer must engage the moment the second key
+        // goes down rather than after a tapping term. No positional filter,
+        // since same-hand keys (Esc + 2/3/4) are used, so require-prior-idle
+        // is the only thing stopping hold-preferred from firing the layer on
+        // the next letter while typing -- without it "don't" becomes "don5"
+        // (' is pos 23, layer 1; t is pos 5, which on layer 1 is N5).
+        //
+        // Known trade-off: the guard decides at key-down, so one of these
+        // pressed within 150ms of a keystroke is forced to a tap however long
+        // it is then held. Measured median gap between keystrokes is 122ms,
+        // so that fires fairly often mid-typing. Left as-is deliberately --
+        // a chord failing here looked identical to the contact chatter on
+        // position 35, so tune this only against a known-good switch.
 
         lt_p: layer_tap_pinky {
             compatible = "zmk,behavior-hold-tap";
@@ -77,17 +84,20 @@
             require-prior-idle-ms = <150>;
         };
 
-        // Thumb layer-taps (Enter, Space). A tap must always produce the
-        // keycode, however fast or lazily the thumb is pressed. Stock &lt is
-        // tap-preferred with a 200ms term and no guards, so a thumb that
-        // lingers past 200ms mid-sentence silently became a layer hold and
-        // the Enter was never sent.
-        //   - require-prior-idle-ms forces a tap when the key is pressed in
-        //     the middle of typing, no matter how long the thumb then lingers.
-        //   - retro-tap emits the tap on release when the key was held but no
-        //     other key was pressed, so a slow deliberate Enter still types.
-        // The layer engages only on a press that follows a short pause AND is
-        // combined with another key: a deliberate, slow action.
+        // Thumb layer-taps (Enter, Space). These are typing keys first and
+        // layer keys second, so the tap has to be the reliable action: stock
+        // &lt is tap-preferred with a 200ms term, short enough that a thumb
+        // lingering mid-sentence became a layer hold and the keycode was
+        // never sent. A 300ms term plus retro-tap fixes that -- retro-tap
+        // emits the tap on release when the key was held with no other key
+        // pressed, so even a slow deliberate Enter still types.
+        //
+        // Deliberately no require-prior-idle-ms. That guard forces a tap
+        // whenever a key was pressed in the preceding window, however long
+        // the thumb is then held, which would make layers 2 and 4 unreachable
+        // until typing pauses -- unacceptable for a nav layer used mid-edit.
+        // It belongs on the home row mods (which have it) where a misfire
+        // costs a wrong modifier, not on layer-taps.
 
         lt_t: layer_tap_thumb {
             compatible = "zmk,behavior-hold-tap";
@@ -97,7 +107,6 @@
             #binding-cells = <2>;
             flavor = "tap-preferred";
             tapping-term-ms = <300>;
-            require-prior-idle-ms = <150>;
             quick-tap-ms = <200>;
             retro-tap;
         };
