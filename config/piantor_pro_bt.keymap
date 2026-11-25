@@ -76,6 +76,31 @@
             tapping-term-ms = <150>;
             require-prior-idle-ms = <150>;
         };
+
+        // Thumb layer-taps (Enter, Space). A tap must always produce the
+        // keycode, however fast or lazily the thumb is pressed. Stock &lt is
+        // tap-preferred with a 200ms term and no guards, so a thumb that
+        // lingers past 200ms mid-sentence silently became a layer hold and
+        // the Enter was never sent.
+        //   - require-prior-idle-ms forces a tap when the key is pressed in
+        //     the middle of typing, no matter how long the thumb then lingers.
+        //   - retro-tap emits the tap on release when the key was held but no
+        //     other key was pressed, so a slow deliberate Enter still types.
+        // The layer engages only on a press that follows a short pause AND is
+        // combined with another key: a deliberate, slow action.
+
+        lt_t: layer_tap_thumb {
+            compatible = "zmk,behavior-hold-tap";
+            display-name = "Thumb Layer Tap";
+            bindings = <&mo>, <&kp>;
+
+            #binding-cells = <2>;
+            flavor = "tap-preferred";
+            tapping-term-ms = <300>;
+            require-prior-idle-ms = <150>;
+            quick-tap-ms = <200>;
+            retro-tap;
+        };
     };
 
     keymap {
@@ -91,7 +116,7 @@
             //                    | GUI | LWR | SPC | ENT | RSE  | ALT |
 
             bindings = <
-&kp TAB  &kp Q  &kp W  &kp E  &kp R  &kp T  &kp Y  &kp U  &kp I  &kp O  &kp P  &kp BACKSLASH  &lt_p 1 ESC  &hml LEFT_GUI A  &hml LEFT_ALT S  &hml LCTRL D  &hml LEFT_SHIFT F  &kp G  &kp H  &hmr RSHIFT J  &hmr RCTRL K  &hmr RIGHT_ALT L  &hmr RGUI SEMI  &lt_p 1 SQT  &lt_p 6 GRAVE  &kp Z  &kp X  &kp C  &kp V  &kp B  &kp N  &kp M  &kp COMMA  &kp DOT  &kp FSLH  &lt_p 7 LEFT_BRACKET  &mo 5  &kp BACKSPACE  &kp DELETE  &lt 2 ENTER  &lt 4 SPACE  &mo 3
+&kp TAB  &kp Q  &kp W  &kp E  &kp R  &kp T  &kp Y  &kp U  &kp I  &kp O  &kp P  &kp BACKSLASH  &lt_p 1 ESC  &hml LEFT_GUI A  &hml LEFT_ALT S  &hml LCTRL D  &hml LEFT_SHIFT F  &kp G  &kp H  &hmr RSHIFT J  &hmr RCTRL K  &hmr RIGHT_ALT L  &hmr RGUI SEMI  &lt_p 1 SQT  &lt_p 6 GRAVE  &kp Z  &kp X  &kp C  &kp V  &kp B  &kp N  &kp M  &kp COMMA  &kp DOT  &kp FSLH  &lt_p 7 LEFT_BRACKET  &mo 5  &kp BACKSPACE  &kp DELETE  &lt_t 2 ENTER  &lt_t 4 SPACE  &mo 3
             >;
         };
 
