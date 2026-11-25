@@ -12,6 +12,7 @@
 #   ./build.sh --reset         # settings_reset for both halves
 #   ./build.sh --all           # everything in build.yaml
 #   ./build.sh --calib         # left half only: LED chain calibration chase (src/led_calibration.c)
+#   ./build.sh --log           # left half only: USB CDC logging build for diagnostics
 #   ./build.sh --pristine      # force a clean rebuild
 #   ./build.sh --update        # re-run `west update` (after changing west.yml)
 #   ./build.sh --shell         # drop into the container instead of building
@@ -37,10 +38,11 @@ while [[ $# -gt 0 ]]; do
         --reset)          SET="reset" ;;
         --all)            SET="all" ;;
         --calib)          SET="calib" ;;
+        --log)            SET="log" ;;
         -p|--pristine)    PRISTINE=1 ;;
         -u|--update)      DO_UPDATE=1 ;;
         --shell)          SHELL_ONLY=1 ;;
-        -h|--help)        sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help)        sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *)                echo "unknown option: $1" >&2; exit 2 ;;
     esac
     shift
@@ -55,11 +57,20 @@ piantor_pro_bt_right;settings_reset;;;piantor_pro_bt_right-settings_reset"
 # Local-only dev target, deliberately not in build.yaml. Same as the default
 # left build but with underglow compiled out and the calibration chase in.
 TARGETS_CALIB="piantor_pro_bt_left;nice_view;studio-rpc-usb-uart;-DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_RGB_UNDERGLOW=n -DCONFIG_PIANTOR_LED_CALIBRATION=y;piantor_pro_bt_left-led_calib"
+# Local-only diagnostics target. Central half with USB CDC ACM logging, which
+# prints a line per hold-tap decision (and per incoming peripheral position).
+# Uses ZMK's zmk-usb-logging snippet: CONFIG_ZMK_USB_LOGGING alone is not
+# enough, since USB_CDC_ACM also needs the cdc-acm-uart devicetree node that
+# the snippet's overlay adds. It replaces studio-rpc-usb-uart rather than
+# joining it -- both claim the console/CDC ACM endpoint. Separate artifact
+# name so the normal firmware is untouched.
+TARGETS_LOG="piantor_pro_bt_left;nice_view;zmk-usb-logging;;piantor_pro_bt_left-logging"
 
 case "$SET" in
     default) TARGETS="$TARGETS_DEFAULT" ;;
     reset)   TARGETS="$TARGETS_RESET" ;;
     calib)   TARGETS="$TARGETS_CALIB" ;;
+    log)     TARGETS="$TARGETS_LOG" ;;
     all)     TARGETS="$TARGETS_DEFAULT
 $TARGETS_RESET" ;;
 esac
